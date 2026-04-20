@@ -8,7 +8,9 @@ export default function Sidebar() {
   const { user } = useAuth()
   const { darkMode, toggleDarkMode } = useTheme()
   const [memberData, setMemberData] = useState(null)
+  const [unreadCount, setUnreadCount] = useState(0)
 
+  // Fetch member data
   useEffect(() => {
     if (user?.email) {
       fetchMemberData()
@@ -25,6 +27,44 @@ export default function Sidebar() {
     if (data) {
       setMemberData(data)
     }
+  }
+
+  // Fetch unread count and subscribe to changes
+  useEffect(() => {
+    if (!memberData?.id) return
+
+    fetchUnreadCount()
+
+    // Subscribe to notification changes
+    const channel = supabase
+      .channel(`sidebar-notifications-${memberData.id}`)
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'notifications',
+      }, (payload) => {
+        // Refetch count on any notification change
+        if (payload.new?.user_id === memberData.id || payload.old?.user_id === memberData.id) {
+          fetchUnreadCount()
+        }
+      })
+      .subscribe()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [memberData?.id])
+
+  async function fetchUnreadCount() {
+    if (!memberData?.id) return
+
+    const { count } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', memberData.id)
+      .eq('read', false)
+
+    setUnreadCount(count || 0)
   }
 
   const navigation = [
@@ -54,11 +94,11 @@ export default function Sidebar() {
             <div className="absolute -bottom-2 left-3 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent" style={{ borderTopColor: '#83409b' }}></div>
           </div>
         </div>
-        <em className="text-[13px] text-white mt-1 inline-block">Website edits spotted by the pride</em>
+
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 px-4 py-6 space-y-1">
+      <nav className="flex-1 px-4 pt-3 pb-6 space-y-1">
         {navigation.map((item) => {
           const isActive = location.pathname === item.href
           return (
@@ -76,6 +116,26 @@ export default function Sidebar() {
             </Link>
           )
         })}
+
+        {/* Notifications - with border separator */}
+        <div className="pt-3 mt-6 border-t border-white/10">
+          <Link
+            to="/notifications"
+            className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${
+              location.pathname === '/notifications'
+                ? 'bg-white/15 text-white backdrop-blur-sm'
+                : 'text-white/70 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <BellIcon className="w-5 h-5" />
+            Notifications
+            {unreadCount > 0 && (
+              <span className="ml-auto min-w-[20px] h-5 flex items-center justify-center bg-red-500 text-white text-[11px] font-bold rounded-full px-1.5">
+                {unreadCount > 99 ? '99+' : unreadCount}
+              </span>
+            )}
+          </Link>
+        </div>
       </nav>
 
       {/* Bottom section */}
@@ -111,11 +171,11 @@ export default function Sidebar() {
               {memberData?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || 'U'}
             </div>
           )}
-          <div className="flex-1 min-w-0">
+          <div className="flex-1 min-w-0 overflow-hidden">
             <p className="text-sm font-medium text-white truncate">
               {memberData?.name || user?.user_metadata?.name || user?.email?.split('@')[0]}
             </p>
-            <p className="text-xs text-slate-400 truncate">
+            <p className="text-xs text-slate-400 truncate max-w-[140px]">
               {user?.email}
             </p>
           </div>
@@ -171,6 +231,14 @@ function HelpIcon({ className }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  )
+}
+
+function BellIcon({ className }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
     </svg>
   )
 }

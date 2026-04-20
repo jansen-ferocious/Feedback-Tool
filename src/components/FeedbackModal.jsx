@@ -87,12 +87,14 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
     if (!newComment.trim() || !currentMember) return
 
     setAddingComment(true)
+    const commentContent = newComment.trim()
+
     const { error } = await supabase
       .from('feedback_notes')
       .insert({
         feedback_id: feedback.id,
         team_member_id: currentMember.id,
-        content: newComment.trim()
+        content: commentContent
       })
 
     if (error) {
@@ -101,6 +103,36 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
     } else {
       setNewComment('')
       fetchComments()
+
+      // Create notifications for submitter and assignee (excluding commenter)
+      const notifyUserIds = []
+
+      // Find submitter's team member ID
+      if (feedback.submitter_email) {
+        const submitterMember = teamMembers.find(m => m.email?.toLowerCase() === feedback.submitter_email?.toLowerCase())
+        if (submitterMember && submitterMember.id !== currentMember.id) {
+          notifyUserIds.push(submitterMember.id)
+        }
+      }
+
+      // Add assignee if different from commenter and submitter
+      if (feedback.assigned_to && feedback.assigned_to !== currentMember.id && !notifyUserIds.includes(feedback.assigned_to)) {
+        notifyUserIds.push(feedback.assigned_to)
+      }
+
+      // Create notifications
+      const commentPreview = commentContent.length > 50 ? commentContent.substring(0, 50) + '...' : commentContent
+      for (const userId of notifyUserIds) {
+        await supabase.from('notifications').insert({
+          user_id: userId,
+          type: 'comment',
+          title: `${currentMember.name} commented`,
+          message: commentPreview,
+          project_id: feedback.project_id,
+          feedback_id: feedback.id,
+          actor_id: currentMember.id,
+        })
+      }
     }
     setAddingComment(false)
   }
@@ -117,7 +149,27 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
   }
 
   async function saveChanges() {
-    await supabase.from('feedback').update({ status, assigned_to: assignedTo || null }).eq('id', feedback.id)
+    const previousAssignee = feedback.assigned_to
+    const newAssignee = assignedTo || null
+
+    await supabase.from('feedback').update({ status, assigned_to: newAssignee }).eq('id', feedback.id)
+
+    // Create notification if assignment changed to a new person
+    if (newAssignee && newAssignee !== previousAssignee && currentMember) {
+      const commentPreview = feedback.comment?.length > 50
+        ? feedback.comment.substring(0, 50) + '...'
+        : feedback.comment || 'No comment'
+
+      await supabase.from('notifications').insert({
+        user_id: newAssignee,
+        type: 'assignment',
+        title: 'New feedback assigned to you',
+        message: commentPreview,
+        project_id: feedback.project_id,
+        feedback_id: feedback.id,
+        actor_id: currentMember.id,
+      })
+    }
     onUpdate()
   }
 

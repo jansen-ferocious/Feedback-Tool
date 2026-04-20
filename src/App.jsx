@@ -8,6 +8,7 @@ import Project from './pages/Project'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
 import Help from './pages/Help'
+import Notifications from './pages/Notifications'
 
 const ALLOWED_DOMAIN = 'ferociousmedia.com'
 
@@ -175,6 +176,7 @@ function App() {
             <Route path="users" element={<Users />} />
             <Route path="settings" element={<Settings />} />
             <Route path="help" element={<Help />} />
+            <Route path="notifications" element={<Notifications />} />
           </Route>
         </Routes>
       </AuthContext.Provider>

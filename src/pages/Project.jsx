@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { useAuth } from '../App'
 import KanbanBoard from '../components/KanbanBoard'
@@ -7,6 +7,7 @@ import ProjectSettings from '../components/ProjectSettings'
 
 export default function Project() {
   const { projectId } = useParams()
+  const [searchParams, setSearchParams] = useSearchParams()
   const { user } = useAuth()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -300,6 +301,12 @@ export default function Project() {
           teamMembers={teamMembers}
           onCountChange={setFeedbackStats}
           onPageUrlsChange={setPageUrls}
+          initialFeedbackId={searchParams.get('feedback')}
+          onFeedbackOpened={() => {
+            // Clear the feedback param from URL once opened
+            searchParams.delete('feedback')
+            setSearchParams(searchParams, { replace: true })
+          }}
         />
       )}
       {activeTab === 'settings' && <ProjectSettings project={project} onUpdate={fetchProject} />}

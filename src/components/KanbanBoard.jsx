@@ -11,11 +11,12 @@ const COLUMNS = [
   { id: 'ignored', title: 'Not Implemented', dotColor: 'bg-slate-500', borderColor: 'border-slate-300 dark:border-slate-600', gradient: 'from-slate-200 to-slate-100 dark:from-slate-700/60 dark:to-slate-700/30' },
 ]
 
-export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filterPageUrl, currentUserMemberId, teamMembers, onCountChange, onPageUrlsChange }) {
+export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filterPageUrl, currentUserMemberId, teamMembers, onCountChange, onPageUrlsChange, initialFeedbackId, onFeedbackOpened }) {
   const [feedback, setFeedback] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFeedback, setSelectedFeedback] = useState(null)
   const [activeId, setActiveId] = useState(null)
+  const [hasOpenedInitial, setHasOpenedInitial] = useState(false)
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -64,6 +65,18 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filt
     setFeedback(enrichedData)
     setLoading(false)
   }
+
+  // Auto-open feedback modal from URL param
+  useEffect(() => {
+    if (initialFeedbackId && feedback.length > 0 && !hasOpenedInitial) {
+      const feedbackToOpen = feedback.find(f => f.id === initialFeedbackId)
+      if (feedbackToOpen) {
+        setSelectedFeedback(feedbackToOpen)
+        setHasOpenedInitial(true)
+        onFeedbackOpened?.()
+      }
+    }
+  }, [initialFeedbackId, feedback, hasOpenedInitial, onFeedbackOpened])
 
   // Apply sorting and filtering
   const filteredFeedback = (() => {
