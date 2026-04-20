@@ -30,6 +30,7 @@ export default function Sidebar() {
   const navigation = [
     { name: 'Websites', href: '/', icon: WebsitesIcon },
     { name: 'Users', href: '/users', icon: UsersIcon },
+    { name: 'Help Guide', href: '/help', icon: HelpIcon },
     { name: 'Account Settings', href: '/settings', icon: SettingsIcon },
   ]
 
@@ -120,6 +121,7 @@ export default function Sidebar() {
           </div>
         </div>
       </div>
+
     </aside>
   )
 }
@@ -161,6 +163,14 @@ function SunIcon({ className }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+    </svg>
+  )
+}
+
+function HelpIcon({ className }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
     </svg>
   )
 }

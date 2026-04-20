@@ -107,7 +107,8 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filt
     const memberStats = teamMembers.map(member => {
       const memberFeedback = feedback.filter(f => f.assigned_to === member.id)
       const total = memberFeedback.length
-      const completed = memberFeedback.filter(f => f.status === 'done').length
+      // Count both 'done' and 'ignored' (not implemented) as completed
+      const completed = memberFeedback.filter(f => f.status === 'done' || f.status === 'ignored').length
       const inProgress = memberFeedback.filter(f => f.status === 'in_progress').length
       const notStarted = memberFeedback.filter(f => f.status === 'not_started').length
       const open = inProgress + notStarted
@@ -126,7 +127,8 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filt
 
     // Calculate overall stats
     const total = feedback.length
-    const completed = feedback.filter(f => f.status === 'done').length
+    // Count both 'done' and 'ignored' (not implemented) as completed
+    const completed = feedback.filter(f => f.status === 'done' || f.status === 'ignored').length
     const completionPercent = total > 0 ? Math.round((completed / total) * 100) : 0
 
     onCountChange?.({

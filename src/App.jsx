@@ -7,6 +7,7 @@ import Dashboard from './pages/Dashboard'
 import Project from './pages/Project'
 import Users from './pages/Users'
 import Settings from './pages/Settings'
+import Help from './pages/Help'
 
 const ALLOWED_DOMAIN = 'ferociousmedia.com'
 
@@ -173,6 +174,7 @@ function App() {
             <Route path="project/:projectId" element={<Project />} />
             <Route path="users" element={<Users />} />
             <Route path="settings" element={<Settings />} />
+            <Route path="help" element={<Help />} />
           </Route>
         </Routes>
       </AuthContext.Provider>
