@@ -7,6 +7,16 @@ const SECTIONS = [
     icon: OverviewIcon,
     content: (
       <>
+        <div className="mb-6 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700">
+          <div className="relative w-full" style={{ paddingBottom: '56.25%' }}>
+            <iframe
+              src="https://www.loom.com/embed/bf6106035bd040969aefbf3b31d691d1"
+              frameBorder="0"
+              allowFullScreen
+              className="absolute top-0 left-0 w-full h-full"
+            />
+          </div>
+        </div>
         <p className="text-gray-600 dark:text-gray-300 mb-4">
           The Feedback Dashboard is a platform for collecting and managing website feedback from your team. It consists of two main parts:
         </p>
