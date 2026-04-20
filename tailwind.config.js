@@ -31,6 +31,7 @@ export default {
       },
       fontFamily: {
         sans: ['Montserrat', 'sans-serif'],
+        heading: ['Lexend', 'sans-serif'],
       },
       borderRadius: {
         'xl': '16px',

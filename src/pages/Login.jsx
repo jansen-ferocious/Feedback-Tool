@@ -30,14 +30,14 @@ export default function Login() {
       <div className="w-full max-w-sm">
         <div className="card p-8 text-center">
           {/* Logo */}
-          <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-primary-light flex items-center justify-center mx-auto mb-6">
-            <svg className="w-7 h-7 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-            </svg>
-          </div>
+          <img
+            src="/logo.png"
+            alt="Logo"
+            className="w-16 h-auto mx-auto mb-2"
+          />
 
           <h1 className="text-2xl font-semibold text-gray-900 dark:text-white mb-1">
-            Welcome back
+            Website Feedback Dashboard
           </h1>
           <p className="text-gray-500 dark:text-gray-400 text-sm mb-6">
             Sign in to your account
@@ -64,7 +64,7 @@ export default function Login() {
           </button>
 
           <p className="mt-6 text-xs text-gray-400 dark:text-gray-500">
-            Only @ferociousmedia.com accounts
+            Only @ferociousmedia.com accounts have access. Contact the development team if you are having trouble accessing your account.
           </p>
         </div>
       </div>

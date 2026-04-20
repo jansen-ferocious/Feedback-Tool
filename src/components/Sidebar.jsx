@@ -34,16 +34,26 @@ export default function Sidebar() {
   ]
 
   return (
-    <aside className="hidden lg:flex lg:flex-col lg:w-64 lg:fixed lg:inset-y-0 border-r border-slate-800" style={{ backgroundColor: '#10192b' }}>
+    <aside className="hidden lg:flex lg:flex-col lg:w0 lg:fixed lg:inset-y-0 border-r border-slate-800" style={{ backgroundColor: '#10192b' }}>
       {/* Logo */}
-      <div className="flex items-center gap-3 px-6 py-3 border-b border-white/10">
-        <img src="/logo.png" alt="Spotted" className="h-24 w-auto" />
-        <div className="flex flex-col">
-          <span className="text-xl font-bold uppercase tracking-wide" style={{ color: '#fef6ff' }}>Feedback</span>
-          <span className="text-xs italic font-semibold text-slate-400">
-            Spotted By the Pride
-          </span>
+      <div className="flex flex-col px-6 py-3 border-b border-white/10">
+        <div className="flex items-center gap-3">
+          <img src="/logo.png" alt="Spotted" className="h-24 w-auto" />
+          <div className="relative">
+            <span className="text-lg font-black uppercase tracking-wide leading-none px-3 py-2 rounded inline-block" style={{ color: '#fef6ff', background: 'linear-gradient(135deg, #74439c 0%, #a6348c 100%)' }}>
+              <span className="inline-flex items-center gap-1">
+                <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5 inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                </svg>
+                Feedback
+              </span>
+              <br />
+              Dashboard
+            </span>
+            <div className="absolute -bottom-2 left-3 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent" style={{ borderTopColor: '#83409b' }}></div>
+          </div>
         </div>
+        <em className="text-[13px] text-white mt-1 inline-block">Website edits spotted by the pride</em>
       </div>
 
       {/* Navigation */}

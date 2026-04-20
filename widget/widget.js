@@ -762,6 +762,164 @@
       justify-content: center;
       padding: 0 5px;
     }
+    .fb-detail-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      z-index: 2147483647;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    }
+    .fb-detail-overlay.active {
+      display: flex;
+    }
+    .fb-detail-modal {
+      background: white;
+      border-radius: 16px;
+      max-width: 600px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .fb-detail-header {
+      background: linear-gradient(135deg, #d146ac 0%, #6a479d 100%);
+      color: white;
+      padding: 16px 20px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .fb-detail-header h2 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .fb-detail-close {
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      padding: 4px;
+      display: flex;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .fb-detail-close:hover {
+      opacity: 1;
+    }
+    .fb-detail-content {
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .fb-detail-screenshot {
+      width: 100%;
+      border-radius: 12px;
+      margin-bottom: 16px;
+      border: 1px solid #e5e7eb;
+      cursor: pointer;
+    }
+    .fb-detail-screenshot:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+    .fb-detail-comment {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px;
+      margin-bottom: 16px;
+      font-size: 15px;
+      line-height: 1.6;
+      color: #374151;
+    }
+    .fb-detail-meta {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 16px;
+    }
+    .fb-detail-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #e5e7eb;
+      font-size: 14px;
+    }
+    .fb-detail-row:last-child {
+      border-bottom: none;
+    }
+    .fb-detail-label {
+      color: #6b7280;
+    }
+    .fb-detail-value {
+      color: #111827;
+      font-weight: 500;
+      text-align: right;
+    }
+    .fb-detail-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .fb-detail-status.not-started {
+      background: rgba(209, 70, 172, 0.1);
+      color: #d146ac;
+    }
+    .fb-detail-status.in-progress {
+      background: rgba(245, 158, 11, 0.1);
+      color: #d97706;
+    }
+    .fb-detail-lightbox {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 2147483648;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px;
+      cursor: pointer;
+    }
+    .fb-detail-lightbox.active {
+      display: flex;
+    }
+    .fb-detail-lightbox img {
+      max-width: 90vw;
+      max-height: 90vh;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+    .fb-detail-lightbox-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      background: none;
+      border: none;
+      color: white;
+      cursor: pointer;
+      opacity: 0.8;
+      transition: opacity 0.2s;
+    }
+    .fb-detail-lightbox-close:hover {
+      opacity: 1;
+    }
+    .fb-marker.hidden {
+      display: none !important;
+    }
   `;
 
   // Inject styles
@@ -861,6 +1019,16 @@
   const actionsContainer = document.createElement('div');
   actionsContainer.className = 'fb-widget-actions';
   actionsContainer.innerHTML = `
+    <button class="fb-action-btn" id="fb-action-toggle-markers">
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="fb-markers-icon-show" style="display: none;">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+      </svg>
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" id="fb-markers-icon-hide">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"/>
+      </svg>
+      <span id="fb-markers-label">Hide Markers</span>
+    </button>
     <button class="fb-action-btn" id="fb-action-view">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
@@ -907,6 +1075,41 @@
   document.body.appendChild(sidebarOverlay);
   document.body.appendChild(sidebar);
   document.body.appendChild(panel);
+
+  // Create feedback detail modal
+  const detailOverlay = document.createElement('div');
+  detailOverlay.className = 'fb-detail-overlay';
+  detailOverlay.innerHTML = `
+    <div class="fb-detail-modal">
+      <div class="fb-detail-header">
+        <h2>Feedback Details</h2>
+        <button class="fb-detail-close">
+          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 6L6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+      <div class="fb-detail-content" id="fb-detail-content">
+      </div>
+    </div>
+  `;
+  document.body.appendChild(detailOverlay);
+
+  // Create lightbox for screenshot
+  const detailLightbox = document.createElement('div');
+  detailLightbox.className = 'fb-detail-lightbox';
+  detailLightbox.innerHTML = `
+    <button class="fb-detail-lightbox-close">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M18 6L6 18M6 6l12 12"/>
+      </svg>
+    </button>
+    <img id="fb-lightbox-img" src="" alt="Screenshot">
+  `;
+  document.body.appendChild(detailLightbox);
+
+  // State for markers visibility
+  let markersVisible = true;
 
   // Check if widget is active for this project
   async function checkWidgetActive() {
@@ -1336,6 +1539,89 @@
     sidebarOverlay.classList.remove('visible');
   }
 
+  function openDetailModal(feedback) {
+    const contentEl = document.getElementById('fb-detail-content');
+    const statusLabel = feedback.status === 'not_started' ? 'Not Started' : 'In Progress';
+    const statusClass = feedback.status === 'not_started' ? 'not-started' : 'in-progress';
+    const formattedDate = new Date(feedback.created_at).toLocaleString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+
+    contentEl.innerHTML = `
+      ${feedback.screenshot_url ? `<img src="${feedback.screenshot_url}" alt="Screenshot" class="fb-detail-screenshot" id="fb-detail-screenshot">` : ''}
+      ${feedback.comment ? `<div class="fb-detail-comment">${feedback.comment}</div>` : ''}
+      <div class="fb-detail-meta">
+        <div class="fb-detail-row">
+          <span class="fb-detail-label">Status</span>
+          <span class="fb-detail-value"><span class="fb-detail-status ${statusClass}">${statusLabel}</span></span>
+        </div>
+        ${feedback.submitter_name ? `<div class="fb-detail-row">
+          <span class="fb-detail-label">Submitted By</span>
+          <span class="fb-detail-value">${feedback.submitter_name}</span>
+        </div>` : ''}
+        <div class="fb-detail-row">
+          <span class="fb-detail-label">Submitted</span>
+          <span class="fb-detail-value">${formattedDate}</span>
+        </div>
+        ${feedback.browser ? `<div class="fb-detail-row">
+          <span class="fb-detail-label">Browser</span>
+          <span class="fb-detail-value">${feedback.browser}</span>
+        </div>` : ''}
+        ${feedback.os ? `<div class="fb-detail-row">
+          <span class="fb-detail-label">OS</span>
+          <span class="fb-detail-value">${feedback.os}</span>
+        </div>` : ''}
+        ${feedback.viewport_width ? `<div class="fb-detail-row">
+          <span class="fb-detail-label">Viewport</span>
+          <span class="fb-detail-value">${feedback.viewport_width} x ${feedback.viewport_height}</span>
+        </div>` : ''}
+      </div>
+    `;
+
+    detailOverlay.classList.add('active');
+    hideActions();
+
+    // Add click handler for screenshot lightbox
+    const screenshotEl = document.getElementById('fb-detail-screenshot');
+    if (screenshotEl) {
+      screenshotEl.addEventListener('click', () => {
+        document.getElementById('fb-lightbox-img').src = feedback.screenshot_url;
+        detailLightbox.classList.add('active');
+      });
+    }
+  }
+
+  function closeDetailModal() {
+    detailOverlay.classList.remove('active');
+  }
+
+  function closeLightbox() {
+    detailLightbox.classList.remove('active');
+  }
+
+  function toggleMarkers() {
+    markersVisible = !markersVisible;
+    const showIcon = document.getElementById('fb-markers-icon-show');
+    const hideIcon = document.getElementById('fb-markers-icon-hide');
+    const label = document.getElementById('fb-markers-label');
+
+    if (markersVisible) {
+      markers.forEach(m => m.classList.remove('hidden'));
+      showIcon.style.display = 'none';
+      hideIcon.style.display = 'block';
+      label.textContent = 'Hide Markers';
+    } else {
+      markers.forEach(m => m.classList.add('hidden'));
+      showIcon.style.display = 'block';
+      hideIcon.style.display = 'none';
+      label.textContent = 'Show Markers';
+    }
+  }
+
   async function updateFeedbackCount() {
     const feedbackItems = await fetchActiveFeedback();
     const countEl = document.getElementById('fb-feedback-count');
@@ -1480,6 +1766,24 @@
   sidebar.querySelector('.fb-sidebar-close').addEventListener('click', closeSidebar);
   sidebarOverlay.addEventListener('click', closeSidebar);
 
+  // Toggle markers
+  document.getElementById('fb-action-toggle-markers').addEventListener('click', () => {
+    toggleMarkers();
+    hideActions();
+  });
+
+  // Detail modal close
+  detailOverlay.querySelector('.fb-detail-close').addEventListener('click', closeDetailModal);
+  detailOverlay.addEventListener('click', (e) => {
+    if (e.target === detailOverlay) closeDetailModal();
+  });
+
+  // Lightbox close
+  detailLightbox.querySelector('.fb-detail-lightbox-close').addEventListener('click', closeLightbox);
+  detailLightbox.addEventListener('click', (e) => {
+    if (e.target === detailLightbox) closeLightbox();
+  });
+
   panel.querySelector('.fb-widget-close').addEventListener('click', closePanel);
 
   document.getElementById('fb-cancel').addEventListener('click', closePanel);
@@ -1596,11 +1900,14 @@
 
   async function fetchActiveFeedback() {
     const projId = await getProjectId();
-    if (!projId) return [];
+    if (!projId) {
+      console.log('FB Widget: No project ID found');
+      return [];
+    }
 
     try {
       const response = await fetch(
-        `${supabaseUrl}/rest/v1/feedback?project_id=eq.${projId}&select=id,comment,status,element_selector,page_url`,
+        `${supabaseUrl}/rest/v1/feedback?project_id=eq.${projId}&select=id,comment,status,element_selector,page_url,created_at,submitter_name,browser,os,viewport_width,viewport_height,screenshot_url`,
         {
           headers: {
             'apikey': supabaseAnonKey,
@@ -1609,23 +1916,32 @@
         }
       );
       const allFeedback = await response.json();
+      console.log('FB Widget: All feedback for project:', allFeedback);
 
       // Filter for active status and has element_selector
       const active = allFeedback.filter(fb =>
         (fb.status === 'not_started' || fb.status === 'in_progress') &&
         fb.element_selector
       );
+      console.log('FB Widget: Active feedback with element_selector:', active);
 
       // Filter by current page
       const currentPath = window.location.pathname;
-      return active.filter(fb => {
+      console.log('FB Widget: Current path:', currentPath);
+      const filtered = active.filter(fb => {
         try {
           const fbUrl = new URL(fb.page_url);
-          return fbUrl.pathname === currentPath;
+          const matches = fbUrl.pathname === currentPath;
+          console.log('FB Widget: Comparing', fbUrl.pathname, 'to', currentPath, '=', matches);
+          return matches;
         } catch {
-          return fb.page_url.includes(currentPath);
+          const matches = fb.page_url.includes(currentPath);
+          console.log('FB Widget: Fallback comparing', fb.page_url, 'includes', currentPath, '=', matches);
+          return matches;
         }
       });
+      console.log('FB Widget: Filtered feedback for this page:', filtered);
+      return filtered;
     } catch (err) {
       console.error('Failed to fetch feedback:', err);
       return [];
@@ -1642,7 +1958,7 @@
     if (!element) return null;
 
     const marker = document.createElement('div');
-    marker.className = `fb-marker ${feedback.status === 'in_progress' ? 'status-in-progress' : ''}`;
+    marker.className = `fb-marker ${feedback.status === 'in_progress' ? 'status-in-progress' : ''} ${!markersVisible ? 'hidden' : ''}`;
 
     const comment = feedback.comment || 'No comment';
     const truncatedComment = comment.length > 50 ? comment.substring(0, 50) + '...' : comment;
@@ -1657,6 +1973,11 @@
     marker.style.position = 'absolute';
     marker.style.left = `${window.scrollX + rect.left - 14}px`;
     marker.style.top = `${window.scrollY + rect.top - 14}px`;
+
+    // Add click handler to open detail modal
+    marker.addEventListener('click', () => {
+      openDetailModal(feedback);
+    });
 
     document.body.appendChild(marker);
     return marker;
