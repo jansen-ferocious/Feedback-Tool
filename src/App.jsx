@@ -118,13 +118,15 @@ function App() {
                          null
 
     if (existing) {
-      // User exists (pre-filled or previously created) - update avatar if missing
+      // User exists - update last_active and avatar if missing
+      const updateData = { last_active: new Date().toISOString() }
       if (!existing.avatar_url && googleAvatar) {
-        await supabase
-          .from('team_members')
-          .update({ avatar_url: googleAvatar })
-          .eq('id', existing.id)
+        updateData.avatar_url = googleAvatar
       }
+      await supabase
+        .from('team_members')
+        .update(updateData)
+        .eq('id', existing.id)
     } else {
       // Create new team member
       const name = authUser.user_metadata?.full_name ||
@@ -136,7 +138,8 @@ function App() {
         email: authUser.email,
         name: name,
         avatar_url: googleAvatar,
-        role: 'Member'
+        role: 'Member',
+        last_active: new Date().toISOString()
       })
     }
   }
