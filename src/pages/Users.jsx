@@ -35,6 +35,14 @@ export default function Users() {
   const [saving, setSaving] = useState(false)
   const [currentUserIsAdmin, setCurrentUserIsAdmin] = useState(false)
 
+  // Filter state
+  const [filterName, setFilterName] = useState('')
+  const [filterTeam, setFilterTeam] = useState('all')
+
+  // Sort state
+  const [sortColumn, setSortColumn] = useState('name')
+  const [sortDirection, setSortDirection] = useState('asc')
+
   // Cropping state
   const [showCropper, setShowCropper] = useState(false)
   const [cropImageSrc, setCropImageSrc] = useState(null)
@@ -279,6 +287,58 @@ export default function Users() {
     }
   }
 
+  // Handle column sort
+  function handleSort(column) {
+    if (sortColumn === column) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortColumn(column)
+      setSortDirection('asc')
+    }
+  }
+
+  // Apply filters and sorting
+  const filteredMembers = members
+    .filter(member => {
+      const matchesName = !filterName ||
+        member.name?.toLowerCase().includes(filterName.toLowerCase()) ||
+        member.email?.toLowerCase().includes(filterName.toLowerCase())
+      const matchesTeam = filterTeam === 'all' || member.team === filterTeam
+      return matchesName && matchesTeam
+    })
+    .sort((a, b) => {
+      let aVal, bVal
+
+      switch (sortColumn) {
+        case 'name':
+          aVal = a.name?.toLowerCase() || ''
+          bVal = b.name?.toLowerCase() || ''
+          break
+        case 'email':
+          aVal = a.email?.toLowerCase() || ''
+          bVal = b.email?.toLowerCase() || ''
+          break
+        case 'team':
+          aVal = a.team?.toLowerCase() || ''
+          bVal = b.team?.toLowerCase() || ''
+          break
+        case 'role':
+          aVal = a.role?.toLowerCase() || ''
+          bVal = b.role?.toLowerCase() || ''
+          break
+        case 'lastActive':
+          aVal = new Date(a.last_active || a.created_at || 0)
+          bVal = new Date(b.last_active || b.created_at || 0)
+          break
+        default:
+          return 0
+      }
+
+      if (aVal < bVal) return sortDirection === 'asc' ? -1 : 1
+      if (aVal > bVal) return sortDirection === 'asc' ? 1 : -1
+      return 0
+    })
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -307,6 +367,53 @@ export default function Users() {
         )}
       </div>
 
+      {/* Filters */}
+      {members.length > 0 && (
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              type="text"
+              value={filterName}
+              onChange={(e) => setFilterName(e.target.value)}
+              placeholder="Search by name or email..."
+              className="text-sm bg-transparent border-none text-gray-700 dark:text-gray-300 focus:ring-0 focus:outline-none w-48"
+            />
+            {filterName && (
+              <button onClick={() => setFilterName('')} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800">
+            <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+            <select
+              value={filterTeam}
+              onChange={(e) => setFilterTeam(e.target.value)}
+              className="text-sm bg-transparent border-none text-gray-700 dark:text-gray-300 focus:ring-0 cursor-pointer pr-6"
+            >
+              <option value="all">Team: All</option>
+              {TEAM_OPTIONS.map((team) => (
+                <option key={team} value={team}>{team}</option>
+              ))}
+            </select>
+          </div>
+
+          {(filterName || filterTeam !== 'all') && (
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {filteredMembers.length} of {members.length} users
+            </span>
+          )}
+        </div>
+      )}
+
       {/* Users Table */}
       {members.length === 0 ? (
         <div className="card p-12 text-center">
@@ -328,16 +435,62 @@ export default function Users() {
             <table className="w-full">
               <thead>
                 <tr className="border-b border-border-light dark:border-border-dark bg-slate-50 dark:bg-slate-800/50">
-                  <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">User</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">Email</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">Last Active</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">Team</th>
-                  <th className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">Role</th>
+                  <th
+                    onClick={() => handleSort('name')}
+                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      User
+                      <SortIcon column="name" sortColumn={sortColumn} sortDirection={sortDirection} />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('email')}
+                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      Email
+                      <SortIcon column="email" sortColumn={sortColumn} sortDirection={sortDirection} />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('lastActive')}
+                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      Last Active
+                      <SortIcon column="lastActive" sortColumn={sortColumn} sortDirection={sortDirection} />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('team')}
+                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      Team
+                      <SortIcon column="team" sortColumn={sortColumn} sortDirection={sortDirection} />
+                    </span>
+                  </th>
+                  <th
+                    onClick={() => handleSort('role')}
+                    className="text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4 cursor-pointer hover:text-gray-700 dark:hover:text-gray-200 select-none"
+                  >
+                    <span className="flex items-center gap-1">
+                      Role
+                      <SortIcon column="role" sortColumn={sortColumn} sortDirection={sortDirection} />
+                    </span>
+                  </th>
                   <th className="text-right text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider px-6 py-4">Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {members.map((member, index) => (
+                {filteredMembers.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="px-6 py-12 text-center text-gray-500 dark:text-gray-400">
+                      No users match your filters
+                    </td>
+                  </tr>
+                ) : filteredMembers.map((member, index) => (
                   <tr key={member.id} className={`hover:bg-primary/10 transition-colors border-b border-border-light dark:border-border-dark ${
                     index % 2 === 1 ? 'bg-slate-50 dark:bg-white/5' : ''
                   }`}>
@@ -624,5 +777,25 @@ export default function Users() {
         </div>
       )}
     </div>
+  )
+}
+
+function SortIcon({ column, sortColumn, sortDirection }) {
+  if (sortColumn !== column) {
+    return (
+      <svg className="w-3 h-3 text-gray-300 dark:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
+      </svg>
+    )
+  }
+
+  return sortDirection === 'asc' ? (
+    <svg className="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+    </svg>
+  ) : (
+    <svg className="w-3 h-3 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
   )
 }

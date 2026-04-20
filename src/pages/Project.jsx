@@ -15,6 +15,8 @@ export default function Project() {
   // Filter/sort state lifted up for toolbar
   const [sortOrder, setSortOrder] = useState('newest')
   const [filterAssignee, setFilterAssignee] = useState('all')
+  const [filterPageUrl, setFilterPageUrl] = useState('all')
+  const [pageUrls, setPageUrls] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [feedbackStats, setFeedbackStats] = useState({ filtered: 0, total: 0, completed: 0, completionPercent: 0, memberStats: [] })
   const [currentUserMemberId, setCurrentUserMemberId] = useState(null)
@@ -224,7 +226,7 @@ export default function Project() {
             <div className="flex items-center gap-1.5 text-sm text-gray-400">
               <span className="font-medium text-gray-600 dark:text-gray-300">{feedbackStats.filtered}</span>
               <span>item{feedbackStats.filtered !== 1 ? 's' : ''}</span>
-              {filterAssignee !== 'all' && (
+              {(filterAssignee !== 'all' || filterPageUrl !== 'all') && (
                 <span className="text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">filtered</span>
               )}
             </div>
@@ -232,7 +234,7 @@ export default function Project() {
             {/* Divider */}
             <div className="h-6 w-px bg-slate-200 dark:bg-slate-600 hidden sm:block" />
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800">
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4h13M3 8h9m-9 4h6m4 0l4-4m0 0l4 4m-4-4v12" />
               </svg>
@@ -241,12 +243,12 @@ export default function Project() {
                 onChange={(e) => setSortOrder(e.target.value)}
                 className="text-sm bg-transparent border-none text-gray-700 dark:text-gray-300 focus:ring-0 cursor-pointer pr-6"
               >
-                <option value="newest">Newest</option>
-                <option value="oldest">Oldest</option>
+                <option value="newest">Sort By: Newest</option>
+                <option value="oldest">Sort By: Oldest</option>
               </select>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800">
               <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
               </svg>
@@ -255,14 +257,34 @@ export default function Project() {
                 onChange={(e) => setFilterAssignee(e.target.value)}
                 className="text-sm bg-transparent border-none text-gray-700 dark:text-gray-300 focus:ring-0 cursor-pointer pr-6"
               >
-                <option value="all">All</option>
+                <option value="all">Assigned To: All</option>
                 {currentUserMemberId && <option value="me">Mine</option>}
                 <option value="unassigned">Unassigned</option>
-                {teamMembers.map((member) => (
-                  <option key={member.id} value={member.id}>{member.name}</option>
-                ))}
+                {teamMembers
+                  .filter(member => member.id !== currentUserMemberId)
+                  .map((member) => (
+                    <option key={member.id} value={member.id}>{member.name}</option>
+                  ))}
               </select>
             </div>
+
+            {pageUrls.length > 1 && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800">
+                <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                </svg>
+                <select
+                  value={filterPageUrl}
+                  onChange={(e) => setFilterPageUrl(e.target.value)}
+                  className="text-sm bg-transparent border-none text-gray-700 dark:text-gray-300 focus:ring-0 cursor-pointer pr-6 max-w-[200px]"
+                >
+                  <option value="all">All Pages</option>
+                  {pageUrls.map((url) => (
+                    <option key={url} value={url}>{new URL(url).pathname || '/'}</option>
+                  ))}
+                </select>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -273,9 +295,11 @@ export default function Project() {
           projectId={projectId}
           sortOrder={sortOrder}
           filterAssignee={filterAssignee}
+          filterPageUrl={filterPageUrl}
           currentUserMemberId={currentUserMemberId}
           teamMembers={teamMembers}
           onCountChange={setFeedbackStats}
+          onPageUrlsChange={setPageUrls}
         />
       )}
       {activeTab === 'settings' && <ProjectSettings project={project} onUpdate={fetchProject} />}

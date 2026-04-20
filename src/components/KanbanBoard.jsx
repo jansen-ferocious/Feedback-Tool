@@ -5,13 +5,13 @@ import FeedbackCard from './FeedbackCard'
 import FeedbackModal from './FeedbackModal'
 
 const COLUMNS = [
-  { id: 'not_started', title: 'Not Started', dotColor: 'bg-slate-300', borderColor: 'border-slate-200 dark:border-slate-700', gradient: 'from-slate-50 to-slate-100/50 dark:from-slate-800/40 dark:to-slate-800/20' },
+  { id: 'not_started', title: 'Not Started', dotColor: 'bg-slate-300', borderColor: 'border-slate-200 dark:border-slate-700', gradient: 'from-slate-50 to-slate-100/50 dark:from-slate-900/60 dark:to-slate-900/40' },
   { id: 'in_progress', title: 'In Progress', dotColor: 'bg-amber-500', borderColor: 'border-amber-200 dark:border-amber-800/50', gradient: 'from-amber-50 to-orange-50/50 dark:from-amber-900/30 dark:to-amber-900/10' },
   { id: 'done', title: 'Done', dotColor: 'bg-emerald-500', borderColor: 'border-emerald-200 dark:border-emerald-800/50', gradient: 'from-emerald-50 to-green-50/50 dark:from-emerald-900/30 dark:to-emerald-900/10' },
   { id: 'ignored', title: 'Not Implemented', dotColor: 'bg-slate-500', borderColor: 'border-slate-300 dark:border-slate-600', gradient: 'from-slate-200 to-slate-100 dark:from-slate-700/60 dark:to-slate-700/30' },
 ]
 
-export default function KanbanBoard({ projectId, sortOrder, filterAssignee, currentUserMemberId, teamMembers, onCountChange }) {
+export default function KanbanBoard({ projectId, sortOrder, filterAssignee, filterPageUrl, currentUserMemberId, teamMembers, onCountChange, onPageUrlsChange }) {
   const [feedback, setFeedback] = useState([])
   const [loading, setLoading] = useState(true)
   const [selectedFeedback, setSelectedFeedback] = useState(null)
@@ -78,6 +78,11 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, curr
       filtered = filtered.filter(f => f.assigned_to === filterAssignee)
     }
 
+    // Filter by page URL
+    if (filterPageUrl && filterPageUrl !== 'all') {
+      filtered = filtered.filter(f => f.page_url === filterPageUrl)
+    }
+
     // Sort by date
     filtered.sort((a, b) => {
       const dateA = new Date(a.created_at)
@@ -87,6 +92,14 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, curr
 
     return filtered
   })()
+
+  // Update page URLs when feedback changes
+  useEffect(() => {
+    if (onPageUrlsChange && feedback.length > 0) {
+      const uniqueUrls = [...new Set(feedback.map(f => f.page_url).filter(Boolean))]
+      onPageUrlsChange(uniqueUrls)
+    }
+  }, [feedback, onPageUrlsChange])
 
   // Report stats back to parent
   useEffect(() => {
@@ -182,6 +195,10 @@ export default function KanbanBoard({ projectId, sortOrder, filterAssignee, curr
           teamMembers={teamMembers}
           onClose={() => setSelectedFeedback(null)}
           onUpdate={fetchFeedback}
+          onDelete={(feedbackId) => {
+            // Optimistically remove from local state
+            setFeedback(prev => prev.filter(f => f.id !== feedbackId))
+          }}
           columnFeedback={filteredFeedback.filter(f => f.status === selectedFeedback.status)}
           onNavigate={(feedback) => setSelectedFeedback(feedback)}
         />
@@ -201,7 +218,7 @@ function Column({ column, feedback, onCardClick }) {
       <div className="flex items-center gap-2 mb-4">
         <div className={`w-2.5 h-2.5 rounded-full ${column.dotColor}`} />
         <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{column.title}</h3>
-        <span className="ml-auto text-xs font-medium text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full">
+        <span className="ml-auto text-xs font-medium text-gray-500 dark:text-gray-400 bg-white/60 dark:bg-black/20 px-2 py-0.5 rounded-full border border-gray-200 dark:border-gray-600">
           {feedback.length}
         </span>
       </div>

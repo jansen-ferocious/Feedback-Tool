@@ -65,6 +65,26 @@
   function init() {
     // Styles
   const styles = `
+    /* Reset styles for widget elements only */
+    .fb-widget-button,
+    .fb-widget-panel,
+    .fb-widget-panel *,
+    .fb-widget-actions,
+    .fb-widget-actions *,
+    .fb-feedback-sidebar,
+    .fb-feedback-sidebar *,
+    .fb-detail-overlay,
+    .fb-detail-overlay *,
+    .fb-detail-lightbox,
+    .fb-selecting-hint,
+    .fb-marker,
+    .fb-marker * {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+      line-height: 1.5 !important;
+      letter-spacing: 0 !important;
+      text-transform: none !important;
+      font-style: normal !important;
+    }
     .fb-widget-button {
       position: fixed;
       bottom: 20px;
@@ -73,7 +93,7 @@
       height: 56px;
       border-radius: 50%;
       background: linear-gradient(135deg, #d146ac 0%, #6a479d 100%);
-      color: white;
+      color: white !important;
       border: none;
       cursor: pointer;
       box-shadow: 0 4px 12px rgba(157, 38, 123, 0.4);
@@ -97,6 +117,7 @@
     .fb-widget-button svg {
       width: 24px;
       height: 24px;
+      color: white !important;
     }
     .fb-widget-panel {
       position: fixed;
@@ -109,7 +130,7 @@
       box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
       z-index: 2147483647;
       display: none;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       overflow: hidden;
     }
     .fb-widget-panel.active {
@@ -181,7 +202,7 @@
       color: #374151;
     }
     .fb-widget-btn-secondary:hover {
-      background: #e5e7eb;
+      background: #f4f5f6;
     }
     .fb-widget-btn:disabled {
       opacity: 0.5;
@@ -380,7 +401,7 @@
       display: flex;
       align-items: center;
       gap: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
     .fb-selecting-hint kbd {
       background: rgba(255,255,255,0.2);
@@ -474,7 +495,7 @@
       color: #6b7280;
     }
     .fb-quick-cancel:hover {
-      background: #e5e7eb;
+      background: #f4f5f6;
     }
     .fb-marker {
       position: absolute;
@@ -498,10 +519,10 @@
     }
     .fb-marker-number {
       transform: rotate(45deg);
-      color: white;
+      color: white !important;
       font-size: 12px;
       font-weight: 700;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
     .fb-marker-tooltip {
       position: absolute;
@@ -513,7 +534,7 @@
       padding: 8px 12px;
       border-radius: 8px;
       font-size: 12px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       white-space: nowrap;
       max-width: 200px;
       overflow: hidden;
@@ -544,6 +565,21 @@
     .fb-marker.status-in-progress:hover {
       box-shadow: 0 4px 12px rgba(245, 158, 11, 0.5);
     }
+    .fb-screenshot-pin {
+      position: fixed;
+      width: 36px;
+      height: 36px;
+      background: linear-gradient(135deg, #d146ac 0%, #6a479d 100%);
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      z-index: 2147483645;
+      box-shadow: 0 3px 10px rgba(157, 38, 123, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 3px solid white;
+      pointer-events: none;
+    }
     .fb-widget-actions {
       position: fixed;
       bottom: 86px;
@@ -572,7 +608,7 @@
       border-radius: 12px;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
       cursor: pointer;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       font-size: 14px;
       font-weight: 500;
       color: #374151;
@@ -590,10 +626,10 @@
     }
     .fb-action-btn.primary {
       background: linear-gradient(135deg, #d146ac 0%, #6a479d 100%);
-      color: white;
+      color: white !important;
     }
     .fb-action-btn.primary svg {
-      color: white;
+      color: white !important;
     }
     .fb-feedback-sidebar {
       position: fixed;
@@ -607,7 +643,7 @@
       z-index: 2147483647;
       transform: translateX(-100%);
       transition: transform 0.3s ease;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
       display: flex;
       flex-direction: column;
     }
@@ -705,7 +741,7 @@
       font-size: 11px;
       font-weight: 500;
       color: #6b7280;
-      background: #e5e7eb;
+      background: #f4f5f6;
       padding: 2px 6px;
       border-radius: 4px;
     }
@@ -751,7 +787,7 @@
     }
     .fb-feedback-count {
       background: #ef4444;
-      color: white;
+      color: white !important;
       font-size: 11px;
       font-weight: 600;
       min-width: 18px;
@@ -774,7 +810,7 @@
       align-items: center;
       justify-content: center;
       padding: 20px;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
     }
     .fb-detail-overlay.active {
       display: flex;
@@ -802,6 +838,7 @@
       margin: 0;
       font-size: 18px;
       font-weight: 600;
+      color: #fff !important;
     }
     .fb-detail-close {
       background: none;
@@ -831,7 +868,7 @@
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     }
     .fb-detail-comment {
-      background: #f9fafb;
+      background: #f4f5f6;
       border-radius: 12px;
       padding: 16px;
       margin-bottom: 16px;
@@ -839,8 +876,15 @@
       line-height: 1.6;
       color: #374151;
     }
+    .fb-detail-comment a {
+      color: #6a479d !important;
+      text-decoration: underline;
+    }
+    .fb-detail-comment a:hover {
+      color: #d146ac !important;
+    }
     .fb-detail-meta {
-      background: #f9fafb;
+      background: #f4f5f6;
       border-radius: 12px;
       padding: 16px;
     }
@@ -1010,7 +1054,6 @@
           <h3>Thanks!</h3>
           <p>Your feedback has been sent. Stay on the prowl and pounce on anything else you see.</p>
         </div>
-        <button class="fb-widget-btn fb-widget-btn-secondary" id="fb-new-feedback">Send More</button>
       </div>
     </div>
   `;
@@ -1309,21 +1352,24 @@
       // Load html2canvas if not already loaded
       const html2canvas = await loadHtml2Canvas();
 
-      // Hide widget elements before capture (but keep highlight if element selected)
+      // Hide widget elements before capture
       button.style.display = 'none';
       hintEl.style.display = 'none';
+      highlightEl.style.display = 'none';
 
-      // Position highlight on selected element for capture
+      // Create a pin element to mark the selected element
+      let pinEl = null;
       if (selectedElement) {
         const rect = selectedElement.getBoundingClientRect();
-        highlightEl.style.display = 'block';
-        highlightEl.style.top = rect.top + 'px';
-        highlightEl.style.left = rect.left + 'px';
-        highlightEl.style.width = rect.width + 'px';
-        highlightEl.style.height = rect.height + 'px';
-      } else {
-        highlightEl.style.display = 'none';
+        pinEl = document.createElement('div');
+        pinEl.className = 'fb-screenshot-pin';
+        pinEl.style.left = (rect.left - 18) + 'px';
+        pinEl.style.top = (rect.top - 18) + 'px';
+        document.body.appendChild(pinEl);
       }
+
+      // Small delay to ensure pin is rendered
+      await new Promise(resolve => setTimeout(resolve, 100));
 
       // Capture only the visible viewport
       const canvas = await html2canvas(document.body, {
@@ -1339,8 +1385,12 @@
         windowHeight: window.innerHeight,
       });
 
-      // Hide highlight and show widget button again
-      highlightEl.style.display = 'none';
+      // Remove the pin element
+      if (pinEl) {
+        pinEl.remove();
+      }
+
+      // Show widget button again
       button.style.display = 'flex';
 
       screenshotDataUrl = canvas.toDataURL('image/png');
@@ -1493,10 +1543,10 @@
 
       showStep('success');
 
-      // Auto-close after 2 seconds and reset for next feedback
+      // Auto-close after 10 seconds and reset for next feedback
       setTimeout(() => {
         closePanel();
-      }, 2000);
+      }, 10000);
 
     } catch (err) {
       console.error('Submission error:', err);
@@ -1539,6 +1589,12 @@
     sidebarOverlay.classList.remove('visible');
   }
 
+  function linkifyText(text) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s<]+)/g;
+    return text.replace(urlRegex, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+  }
+
   function openDetailModal(feedback) {
     const contentEl = document.getElementById('fb-detail-content');
     const statusLabel = feedback.status === 'not_started' ? 'Not Started' : 'In Progress';
@@ -1550,10 +1606,11 @@
       hour: '2-digit',
       minute: '2-digit',
     });
+    const linkedComment = linkifyText(feedback.comment);
 
     contentEl.innerHTML = `
       ${feedback.screenshot_url ? `<img src="${feedback.screenshot_url}" alt="Screenshot" class="fb-detail-screenshot" id="fb-detail-screenshot">` : ''}
-      ${feedback.comment ? `<div class="fb-detail-comment">${feedback.comment}</div>` : ''}
+      ${feedback.comment ? `<div class="fb-detail-comment">${linkedComment}</div>` : ''}
       <div class="fb-detail-meta">
         <div class="fb-detail-row">
           <span class="fb-detail-label">Status</span>
@@ -1567,17 +1624,9 @@
           <span class="fb-detail-label">Submitted</span>
           <span class="fb-detail-value">${formattedDate}</span>
         </div>
-        ${feedback.browser ? `<div class="fb-detail-row">
-          <span class="fb-detail-label">Browser</span>
-          <span class="fb-detail-value">${feedback.browser}</span>
-        </div>` : ''}
-        ${feedback.os ? `<div class="fb-detail-row">
-          <span class="fb-detail-label">OS</span>
-          <span class="fb-detail-value">${feedback.os}</span>
-        </div>` : ''}
-        ${feedback.viewport_width ? `<div class="fb-detail-row">
-          <span class="fb-detail-label">Viewport</span>
-          <span class="fb-detail-value">${feedback.viewport_width} x ${feedback.viewport_height}</span>
+        ${(feedback.browser || feedback.os || feedback.viewport_width) ? `<div class="fb-detail-row">
+          <span class="fb-detail-label">Device Info</span>
+          <span class="fb-detail-value">${[feedback.browser, feedback.os, feedback.viewport_width ? `${feedback.viewport_width}x${feedback.viewport_height}` : ''].filter(Boolean).join(' · ')}</span>
         </div>` : ''}
       </div>
     `;
@@ -1844,12 +1893,6 @@
     document.getElementById('fb-header-title').textContent = 'Update Details';
     showStep('welcome');
     document.getElementById('fb-setup-name').focus();
-  });
-
-  document.getElementById('fb-new-feedback').addEventListener('click', () => {
-    resetForm();
-    closePanel();
-    startSelecting();
   });
 
   // Keyboard shortcut: Ctrl+Shift+F to start selecting
