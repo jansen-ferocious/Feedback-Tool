@@ -629,20 +629,14 @@ export default function ProjectTasks({ project, teamMembers, onStatsChange, init
                               <p className={`font-medium ${task.completed ? 'line-through text-gray-400' : 'text-gray-900 dark:text-white'}`}>{task.content}</p>
 
                               {/* Meta Info */}
-                              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-                                {task.created_by_member && (
-                                  <span className="flex items-center gap-1.5">
-                                    <Avatar member={task.created_by_member} size="sm" />
-                                    <span>Added by {task.created_by_member.name}</span>
-                                  </span>
-                                )}
-                                {task.completed && task.completed_by_member && (
+                              {task.completed && task.completed_by_member && (
+                                <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
                                   <span className="flex items-center gap-1.5 text-green-600 dark:text-green-400">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
                                     {task.completed_by_member.name} · {formatDateTime(task.completed_at)}
                                   </span>
-                                )}
-                              </div>
+                                </div>
+                              )}
 
                               {/* Indicators */}
                               {!isExpanded && (hasContent || comments[task.id]?.length > 0) && (
@@ -788,6 +782,16 @@ export default function ProjectTasks({ project, teamMembers, onStatsChange, init
                           </div>
                         ) : (
                           <div className="space-y-4">
+                            {/* Added by info */}
+                            {task.created_by_member && (
+                              <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                                <Avatar member={task.created_by_member} size="sm" />
+                                <span>Added by {task.created_by_member.name}</span>
+                                <span className="text-gray-300 dark:text-gray-600">·</span>
+                                <span>{formatDate(task.created_at)}</span>
+                              </div>
+                            )}
+
                             {/* Description & Images Row */}
                             <div className="flex gap-4">
                               {/* Details */}
