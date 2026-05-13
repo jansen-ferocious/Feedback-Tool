@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase'
 import { useAuth } from '../App'
 import KanbanBoard from '../components/KanbanBoard'
 import ProjectSettings from '../components/ProjectSettings'
+import ProjectTasks from '../components/ProjectTasks'
 
 export default function Project() {
   const { projectId } = useParams()
@@ -11,7 +12,10 @@ export default function Project() {
   const { user } = useAuth()
   const [project, setProject] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState('feedback')
+  const [activeTab, setActiveTab] = useState(() => {
+    const tabParam = new URLSearchParams(window.location.search).get('tab')
+    return tabParam === 'tasks' || tabParam === 'settings' ? tabParam : 'feedback'
+  })
 
   // Filter/sort state lifted up for toolbar
   const [sortOrder, setSortOrder] = useState('newest')
@@ -20,12 +24,33 @@ export default function Project() {
   const [pageUrls, setPageUrls] = useState([])
   const [teamMembers, setTeamMembers] = useState([])
   const [feedbackStats, setFeedbackStats] = useState({ filtered: 0, total: 0, completed: 0, completionPercent: 0, memberStats: [] })
+  const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, tasks: [] })
   const [currentUserMemberId, setCurrentUserMemberId] = useState(null)
 
   useEffect(() => {
     fetchProject()
     fetchTeamMembers()
+    fetchTaskStats()
   }, [projectId])
+
+  async function fetchTaskStats() {
+    const { data } = await supabase
+      .from('project_tasks')
+      .select('id, status, assigned_to')
+      .eq('project_id', projectId)
+
+    if (data) {
+      // Only count trackable statuses (not_started, in_progress, done)
+      const trackable = data.filter(t =>
+        t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done'
+      )
+      setTaskStats({
+        total: trackable.length,
+        completed: trackable.filter(t => t.status === 'done').length,
+        tasks: trackable // Include all tasks for per-member calculation
+      })
+    }
+  }
 
   async function fetchProject() {
     const { data, error } = await supabase
@@ -50,7 +75,7 @@ export default function Project() {
     setTeamMembers(data || [])
 
     if (user?.email && data) {
-      const currentMember = data.find(m => m.email === user.email)
+      const currentMember = data.find(m => m.email?.toLowerCase() === user.email.toLowerCase())
       if (currentMember) {
         setCurrentUserMemberId(currentMember.id)
       }
@@ -75,7 +100,8 @@ export default function Project() {
   }
 
   const tabs = [
-    { id: 'feedback', name: 'Feedback' },
+    { id: 'feedback', name: 'Internal Feedback' },
+    { id: 'tasks', name: 'Client Requested Tasks' },
     { id: 'settings', name: 'Settings' },
   ]
 
@@ -108,7 +134,14 @@ export default function Project() {
               {project.name[0]?.toUpperCase()}
             </div>
             <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{project.name}</h1>
+              <div className="flex items-center gap-3">
+                <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">{project.name}</h1>
+                {project.archived && (
+                  <span className="px-2.5 py-1 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                    Archived
+                  </span>
+                )}
+              </div>
               {project.domain && (
                 <p className="text-sm text-gray-500 dark:text-gray-400">{project.domain}</p>
               )}
@@ -116,12 +149,57 @@ export default function Project() {
           </div>
 
           {/* Progress Tracker */}
-          {feedbackStats.total > 0 && (
+          {(feedbackStats.total > 0 || taskStats.total > 0) && (() => {
+            // Combined stats
+            const combinedTotal = feedbackStats.total + taskStats.total
+            const combinedCompleted = feedbackStats.completed + taskStats.completed
+            const combinedPercent = combinedTotal > 0 ? Math.round((combinedCompleted / combinedTotal) * 100) : 0
+
+            // Calculate combined per-member stats (feedback + tasks)
+            const combinedMemberStats = feedbackStats.memberStats.map(member => {
+              const memberTasks = (taskStats.tasks || []).filter(t => t.assigned_to === member.id)
+              const taskTotal = memberTasks.length
+              const taskCompleted = memberTasks.filter(t => t.status === 'done').length
+
+              const totalCombined = member.total + taskTotal
+              const completedCombined = member.completed + taskCompleted
+              const percentCombined = totalCombined > 0 ? Math.round((completedCombined / totalCombined) * 100) : 0
+
+              return {
+                ...member,
+                total: totalCombined,
+                completed: completedCombined,
+                percent: percentCombined
+              }
+            })
+
+            // Also add members who only have tasks (no feedback)
+            const feedbackMemberIds = feedbackStats.memberStats.map(m => m.id)
+            const taskOnlyMembers = teamMembers
+              .filter(m => !feedbackMemberIds.includes(m.id))
+              .map(member => {
+                const memberTasks = (taskStats.tasks || []).filter(t => t.assigned_to === member.id)
+                const taskTotal = memberTasks.length
+                const taskCompleted = memberTasks.filter(t => t.status === 'done').length
+                const percent = taskTotal > 0 ? Math.round((taskCompleted / taskTotal) * 100) : 0
+
+                return {
+                  ...member,
+                  total: taskTotal,
+                  completed: taskCompleted,
+                  percent
+                }
+              })
+              .filter(m => m.total > 0)
+
+            const allMemberStats = [...combinedMemberStats, ...taskOnlyMembers]
+
+            return (
             <div className="flex items-center gap-6">
               {/* Per-member progress */}
-              {feedbackStats.memberStats.length > 0 && (
+              {allMemberStats.length > 0 && (
                 <div className="flex flex-col gap-2">
-                  {feedbackStats.memberStats.slice(0, 4).map((member) => (
+                  {allMemberStats.slice(0, 4).map((member) => (
                     <div key={member.id} className="flex items-center gap-3">
                       {/* Avatar */}
                       {member.avatar_url ? (
@@ -156,7 +234,7 @@ export default function Project() {
               )}
 
               {/* Divider */}
-              {feedbackStats.memberStats.length > 0 && (
+              {allMemberStats.length > 0 && (
                 <div className="h-12 w-px bg-slate-200 dark:bg-slate-700" />
               )}
 
@@ -180,24 +258,25 @@ export default function Project() {
                       fill="none"
                       stroke="currentColor"
                       strokeWidth="3"
-                      strokeDasharray={`${feedbackStats.completionPercent} 100`}
+                      strokeDasharray={`${combinedPercent} 100`}
                       strokeLinecap="round"
                       className="text-emerald-500"
                     />
                   </svg>
                   <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-gray-700 dark:text-gray-200">
-                    {feedbackStats.completionPercent}%
+                    {combinedPercent}%
                   </span>
                 </div>
                 <div className="text-left">
                   <div className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {feedbackStats.completed}/{feedbackStats.total}
+                    {combinedCompleted}/{combinedTotal}
                   </div>
                   <div className="text-xs text-gray-400">total</div>
                 </div>
               </div>
             </div>
-          )}
+            )
+          })()}
         </div>
       </div>
 
@@ -305,6 +384,18 @@ export default function Project() {
           onFeedbackOpened={() => {
             // Clear the feedback param from URL once opened
             searchParams.delete('feedback')
+            setSearchParams(searchParams, { replace: true })
+          }}
+        />
+      )}
+      {activeTab === 'tasks' && (
+        <ProjectTasks
+          project={project}
+          teamMembers={teamMembers}
+          onStatsChange={setTaskStats}
+          initialTaskId={searchParams.get('task')}
+          onTaskOpened={() => {
+            searchParams.delete('task')
             setSearchParams(searchParams, { replace: true })
           }}
         />

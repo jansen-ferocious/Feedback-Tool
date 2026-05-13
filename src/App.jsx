@@ -110,7 +110,7 @@ function App() {
     const { data: existing } = await supabase
       .from('team_members')
       .select('id, avatar_url')
-      .eq('email', authUser.email)
+      .ilike('email', authUser.email)
       .single()
 
     const googleAvatar = authUser.user_metadata?.avatar_url ||

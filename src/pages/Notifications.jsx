@@ -18,7 +18,7 @@ export default function Notifications() {
       const { data } = await supabase
         .from('team_members')
         .select('id')
-        .eq('email', user.email)
+        .ilike('email', user.email)
         .single()
 
       if (data) {
@@ -97,6 +97,8 @@ export default function Notifications() {
     if (notification.project_id) {
       if (notification.type === 'comment' && notification.feedback_id) {
         navigate(`/project/${notification.project_id}?feedback=${notification.feedback_id}`)
+      } else if (notification.type === 'comment' && notification.task_id) {
+        navigate(`/project/${notification.project_id}?tab=tasks&task=${notification.task_id}`)
       } else {
         navigate(`/project/${notification.project_id}`)
       }

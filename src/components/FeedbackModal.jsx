@@ -45,6 +45,8 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
   const [newComment, setNewComment] = useState('')
   const [addingComment, setAddingComment] = useState(false)
   const [currentMember, setCurrentMember] = useState(null)
+  const [commentImage, setCommentImage] = useState(null)
+  const [commentImagePreview, setCommentImagePreview] = useState(null)
 
   // Check if current user is the submitter
   const isSubmitter = user?.email && feedback.submitter_email &&
@@ -61,6 +63,8 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
     setAssignedTo(feedback.assigned_to || '')
     setShowDeleteConfirm(false)
     setNewComment('')
+    setCommentImage(null)
+    setCommentImagePreview(null)
     fetchComments()
   }, [feedback.id])
 
@@ -82,19 +86,83 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
     setComments(data || [])
   }
 
+  function handleImageSelect(e) {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      alert('Please select an image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Image must be less than 5MB')
+      return
+    }
+
+    setCommentImage(file)
+    setCommentImagePreview(URL.createObjectURL(file))
+  }
+
+  function clearCommentImage() {
+    setCommentImage(null)
+    if (commentImagePreview) {
+      URL.revokeObjectURL(commentImagePreview)
+    }
+    setCommentImagePreview(null)
+  }
+
+  async function uploadCommentImage(file) {
+    if (!file) return null
+
+    try {
+      const filename = `comment-${Date.now()}-${Math.random().toString(36).substring(7)}.${file.type.split('/')[1]}`
+
+      const { error } = await supabase.storage
+        .from('screenshots')
+        .upload(filename, file, {
+          contentType: file.type,
+          upsert: false
+        })
+
+      if (error) {
+        console.error('Image upload failed:', error)
+        return null
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('screenshots')
+        .getPublicUrl(filename)
+
+      return publicUrl
+    } catch (err) {
+      console.error('Image upload error:', err)
+      return null
+    }
+  }
+
   async function handleAddComment(e) {
     e.preventDefault()
-    if (!newComment.trim() || !currentMember) return
+    if ((!newComment.trim() && !commentImage) || !currentMember) return
 
     setAddingComment(true)
     const commentContent = newComment.trim()
+
+    // Upload image if selected
+    let imageUrl = null
+    if (commentImage) {
+      imageUrl = await uploadCommentImage(commentImage)
+    }
 
     const { error } = await supabase
       .from('feedback_notes')
       .insert({
         feedback_id: feedback.id,
         team_member_id: currentMember.id,
-        content: commentContent
+        content: commentContent,
+        image_url: imageUrl
       })
 
     if (error) {
@@ -102,6 +170,7 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
       alert('Failed to add comment')
     } else {
       setNewComment('')
+      clearCommentImage()
       fetchComments()
 
       // Create notifications for submitter and assignee (excluding commenter)
@@ -456,9 +525,19 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
                             )}
                           </div>
                         </div>
-                        <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
-                          {linkifyText(comment.content)}
-                        </p>
+                        {comment.content && (
+                          <p className="text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+                            {linkifyText(comment.content)}
+                          </p>
+                        )}
+                        {comment.image_url && (
+                          <img
+                            src={comment.image_url}
+                            alt="Comment attachment"
+                            className="mt-2 max-w-full max-h-64 rounded-lg border border-border-light dark:border-border-dark cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => window.open(comment.image_url, '_blank')}
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -472,34 +551,66 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
 
             {/* Add Comment Form */}
             {currentMember && (
-              <form onSubmit={handleAddComment} className="mt-4 flex gap-3">
-                {currentMember.avatar_url ? (
-                  <img
-                    src={currentMember.avatar_url}
-                    alt={currentMember.name}
-                    className="w-8 h-8 rounded-full object-cover shrink-0"
-                  />
-                ) : (
-                  <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-secondary-light flex items-center justify-center text-white text-sm font-semibold shrink-0">
-                    {currentMember.name?.[0]?.toUpperCase() || '?'}
+              <form onSubmit={handleAddComment} className="mt-4">
+                <div className="flex gap-3">
+                  {currentMember.avatar_url ? (
+                    <img
+                      src={currentMember.avatar_url}
+                      alt={currentMember.name}
+                      className="w-8 h-8 rounded-full object-cover shrink-0"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-secondary to-secondary-light flex items-center justify-center text-white text-sm font-semibold shrink-0">
+                      {currentMember.name?.[0]?.toUpperCase() || '?'}
+                    </div>
+                  )}
+                  <div className="flex-1 flex gap-2">
+                    <input
+                      type="text"
+                      value={newComment}
+                      onChange={(e) => setNewComment(e.target.value)}
+                      placeholder="Add a comment..."
+                      className="input flex-1"
+                    />
+                    <label className="btn-ghost px-3 cursor-pointer flex items-center justify-center hover:bg-gray-100 dark:hover:bg-slate-700 rounded-lg transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageSelect}
+                        className="hidden"
+                      />
+                      <svg className="w-5 h-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                    </label>
+                    <button
+                      type="submit"
+                      disabled={addingComment || (!newComment.trim() && !commentImage)}
+                      className="btn-primary px-4 disabled:opacity-50"
+                    >
+                      {addingComment ? '...' : 'Post'}
+                    </button>
+                  </div>
+                </div>
+                {/* Image Preview */}
+                {commentImagePreview && (
+                  <div className="mt-3 ml-11 relative inline-block">
+                    <img
+                      src={commentImagePreview}
+                      alt="Preview"
+                      className="max-h-32 rounded-lg border border-border-light dark:border-border-dark"
+                    />
+                    <button
+                      type="button"
+                      onClick={clearCommentImage}
+                      className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center shadow-lg transition-colors"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
                   </div>
                 )}
-                <div className="flex-1 flex gap-2">
-                  <input
-                    type="text"
-                    value={newComment}
-                    onChange={(e) => setNewComment(e.target.value)}
-                    placeholder="Add a comment..."
-                    className="input flex-1"
-                  />
-                  <button
-                    type="submit"
-                    disabled={addingComment || !newComment.trim()}
-                    className="btn-primary px-4 disabled:opacity-50"
-                  >
-                    {addingComment ? '...' : 'Post'}
-                  </button>
-                </div>
               </form>
             )}
 

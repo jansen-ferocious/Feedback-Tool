@@ -30,7 +30,7 @@ export default {
         }
       },
       fontFamily: {
-        sans: ['Montserrat', 'sans-serif'],
+        sans: ['Work Sans', 'sans-serif'],
         heading: ['Lexend', 'sans-serif'],
       },
       borderRadius: {

@@ -6,6 +6,7 @@ export default function ProjectSettings({ project, onUpdate }) {
   const navigate = useNavigate()
   const [name, setName] = useState(project.name)
   const [domain, setDomain] = useState(project.domain || '')
+  const [iconUrl, setIconUrl] = useState(project.icon_url || '')
   const [widgetActive, setWidgetActive] = useState(project.widget_active !== false)
   const [saving, setSaving] = useState(false)
   const [copied, setCopied] = useState(false)
@@ -156,11 +157,14 @@ export default function ProjectSettings({ project, onUpdate }) {
     // Build update object
     const updateData = { name, domain, widget_active: widgetActive }
 
-    // Try to fetch favicon from the page, fall back to Google service
-    if (domain) {
+    // Use manual icon URL if provided, otherwise try to fetch from domain
+    if (iconUrl.trim()) {
+      updateData.icon_url = iconUrl.trim()
+      console.log('Using manual icon_url:', updateData.icon_url)
+    } else if (domain) {
       const fetchedIcon = await fetchFaviconFromPage(domain)
       updateData.icon_url = fetchedIcon || `https://www.google.com/s2/favicons?domain=${domain}&sz=128`
-      console.log('Saving icon_url:', updateData.icon_url)
+      console.log('Auto-fetched icon_url:', updateData.icon_url)
     } else {
       updateData.icon_url = null
     }
@@ -205,6 +209,21 @@ export default function ProjectSettings({ project, onUpdate }) {
 
     onUpdate()
     setSaving(false)
+  }
+
+  async function handleArchiveToggle() {
+    const newArchived = !project.archived
+    const { error } = await supabase
+      .from('projects')
+      .update({ archived: newArchived })
+      .eq('id', project.id)
+
+    if (error) {
+      console.error('Error updating archive status:', error)
+      alert('Failed to update archive status')
+    } else {
+      onUpdate()
+    }
   }
 
   async function handleDelete() {
@@ -275,6 +294,32 @@ export default function ProjectSettings({ project, onUpdate }) {
                   className="input w-full"
                   placeholder="example.com"
                 />
+              </div>
+              <div>
+                <label htmlFor="projectIconUrl" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+                  Icon URL
+                </label>
+                <div className="flex gap-3 items-center">
+                  {iconUrl && (
+                    <img
+                      src={iconUrl}
+                      alt="Icon preview"
+                      className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 object-contain"
+                      onError={(e) => e.target.style.display = 'none'}
+                    />
+                  )}
+                  <input
+                    type="text"
+                    id="projectIconUrl"
+                    value={iconUrl}
+                    onChange={(e) => setIconUrl(e.target.value)}
+                    className="input flex-1"
+                    placeholder="https://example.com/favicon.png"
+                  />
+                </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  Leave empty to auto-fetch from domain
+                </p>
               </div>
 
               {/* Widget Active Toggle */}
@@ -465,6 +510,39 @@ export default function ProjectSettings({ project, onUpdate }) {
               {savingAssignees ? 'Saving...' : 'Save Auto-Assign'}
             </button>
             </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Archive Section */}
+      <div className={`card ${project.archived ? 'border-amber-200 dark:border-amber-900/50' : 'border-gray-200 dark:border-gray-700'}`}>
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-xl flex items-center justify-center text-white ${project.archived ? 'bg-gradient-to-br from-amber-400 to-orange-500' : 'bg-gradient-to-br from-slate-400 to-slate-600'}`}>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+              </div>
+              <div>
+                <h2 className={`font-medium ${project.archived ? 'text-amber-600 dark:text-amber-400' : 'text-gray-900 dark:text-white'}`}>
+                  {project.archived ? 'Project Archived' : 'Archive Project'}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {project.archived
+                    ? 'This project is archived. Unarchive to make it active again.'
+                    : 'Hide from dashboard but keep all feedback data'}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleArchiveToggle}
+              className={`btn-outline ${project.archived
+                ? 'text-amber-600 border-amber-200 dark:border-amber-800 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                : 'text-gray-600 border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'}`}
+            >
+              {project.archived ? 'Unarchive' : 'Archive'}
+            </button>
           </div>
         </div>
       </div>

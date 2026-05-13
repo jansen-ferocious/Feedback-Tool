@@ -11,6 +11,7 @@ export default function Dashboard() {
   const [newProjectName, setNewProjectName] = useState('')
   const [newProjectDomain, setNewProjectDomain] = useState('')
   const [creating, setCreating] = useState(false)
+  const [showArchived, setShowArchived] = useState(false)
 
   const [teamMembers, setTeamMembers] = useState([])
 
@@ -27,12 +28,13 @@ export default function Dashboard() {
   }
 
   async function fetchProjects() {
-    // Fetch projects with feedback details
+    // Fetch projects with feedback details and project_tasks
     const { data: projectsData, error } = await supabase
       .from('projects')
       .select(`
         *,
-        feedback(id, status, assigned_to, created_at)
+        feedback(id, status, assigned_to, created_at),
+        project_tasks(id, status, assigned_to, created_at)
       `)
       .order('created_at', { ascending: false })
 
@@ -52,33 +54,57 @@ export default function Dashboard() {
   // Helper to get assignee stats for a project
   function getAssigneeStats(project) {
     const feedback = project.feedback || []
+    const tasks = project.project_tasks || []
     const devAssignee = getMember(project.dev_assignee_id)
     const contentAssignee = getMember(project.content_assignee_id)
 
-    const devOpenCount = feedback.filter(f =>
+    // Count open feedback items
+    const devOpenFeedback = feedback.filter(f =>
       f.assigned_to === project.dev_assignee_id &&
       f.status !== 'done' && f.status !== 'ignored'
     ).length
 
-    const contentOpenCount = feedback.filter(f =>
+    const contentOpenFeedback = feedback.filter(f =>
       f.assigned_to === project.content_assignee_id &&
       f.status !== 'done' && f.status !== 'ignored'
     ).length
 
+    // Count open tasks (not_started or in_progress)
+    const devOpenTasks = tasks.filter(t =>
+      t.assigned_to === project.dev_assignee_id &&
+      (t.status === 'not_started' || t.status === 'in_progress')
+    ).length
+
+    const contentOpenTasks = tasks.filter(t =>
+      t.assigned_to === project.content_assignee_id &&
+      (t.status === 'not_started' || t.status === 'in_progress')
+    ).length
+
+    // Combined open counts
+    const devOpenCount = devOpenFeedback + devOpenTasks
+    const contentOpenCount = contentOpenFeedback + contentOpenTasks
+
     return { devAssignee, contentAssignee, devOpenCount, contentOpenCount }
   }
 
-  // Helper to get most recent feedback date
-  function getMostRecentFeedback(project) {
+  // Helper to get most recent activity date (feedback or tasks)
+  function getMostRecentActivity(project) {
     const feedback = project.feedback || []
-    if (feedback.length === 0) return null
-    const sorted = [...feedback].sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-    return sorted[0]?.created_at
+    const tasks = project.project_tasks || []
+
+    const allDates = [
+      ...feedback.map(f => f.created_at),
+      ...tasks.map(t => t.created_at)
+    ].filter(Boolean)
+
+    if (allDates.length === 0) return null
+    const sorted = allDates.sort((a, b) => new Date(b) - new Date(a))
+    return sorted[0]
   }
 
   // Format relative time
   function formatRelativeTime(dateStr) {
-    if (!dateStr) return 'No feedback'
+    if (!dateStr) return 'No activity'
     const date = new Date(dateStr)
     const now = new Date()
     const diffMs = now - date
@@ -172,41 +198,91 @@ export default function Dashboard() {
       </div>
 
       {/* Projects */}
+      {(() => {
+        const activeProjects = projects.filter(p => !p.archived)
+        const archivedProjects = projects.filter(p => p.archived)
+        const displayedProjects = showArchived ? archivedProjects : activeProjects
+
+        return (
       <div className="card card-shadow overflow-hidden">
         <div className="px-6 py-4 border-b border-border-light dark:border-border-dark flex justify-between items-center">
-          <h2 className="font-semibold text-gray-900 dark:text-white">Projects</h2>
-          <span className="text-sm text-gray-500 dark:text-gray-400">{projects.length} total</span>
+          <div className="flex items-center gap-4">
+            <h2 className="font-semibold text-gray-900 dark:text-white">
+              {showArchived ? 'Archived Projects' : 'Projects'}
+            </h2>
+            <span className="text-sm text-gray-500 dark:text-gray-400">
+              {displayedProjects.length} {showArchived ? 'archived' : 'active'}
+            </span>
+          </div>
+          <div className="flex items-center gap-3">
+            {archivedProjects.length > 0 && (
+              <button
+                onClick={() => setShowArchived(!showArchived)}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  showArchived
+                    ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-400 dark:hover:bg-gray-700'
+                }`}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                </svg>
+                {showArchived ? 'Show Active' : `Archived (${archivedProjects.length})`}
+              </button>
+            )}
+          </div>
         </div>
 
-        {projects.length === 0 ? (
+        {displayedProjects.length === 0 ? (
           <div className="p-12 text-center">
             <div className="w-12 h-12 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                {showArchived ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 8h14M5 8a2 2 0 110-4h14a2 2 0 110 4M5 8v10a2 2 0 002 2h10a2 2 0 002-2V8m-9 4h4" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                )}
               </svg>
             </div>
-            <p className="text-gray-500 dark:text-gray-400 mb-4">No projects yet</p>
-            <button onClick={() => setShowCreateModal(true)} className="btn-primary">
-              Create your first project
-            </button>
+            <p className="text-gray-500 dark:text-gray-400 mb-4">
+              {showArchived ? 'No archived projects' : 'No projects yet'}
+            </p>
+            {!showArchived && (
+              <button onClick={() => setShowCreateModal(true)} className="btn-primary">
+                Create your first project
+              </button>
+            )}
           </div>
         ) : (
           <div>
             {/* Header Row */}
             <div className="grid grid-cols-12 items-center gap-4 px-6 py-3 border-b border-border-light dark:border-border-dark text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
               <div className="col-span-4">Project</div>
-              <div className="col-span-2 text-center">Dev</div>
-              <div className="col-span-2 text-center">Content</div>
-              <div className="col-span-2 text-center">Total</div>
+              <div className="col-span-2">Dev</div>
+              <div className="col-span-2">Content</div>
+              <div className="col-span-2">Total Progress</div>
               <div className="col-span-2 text-right pr-8">Latest Activity</div>
             </div>
             {/* Project Rows */}
             <div>
-            {projects.map((project, index) => {
+            {displayedProjects.map((project, index) => {
               const { devAssignee, contentAssignee, devOpenCount, contentOpenCount } = getAssigneeStats(project)
-              const mostRecent = getMostRecentFeedback(project)
-              const totalCount = project.feedback?.length || 0
-              const doneCount = project.feedback?.filter(f => f.status === 'done').length || 0
+              const mostRecent = getMostRecentActivity(project)
+
+              // Feedback counts
+              const feedbackTotal = project.feedback?.length || 0
+              const feedbackDone = project.feedback?.filter(f => f.status === 'done').length || 0
+
+              // Client requested tasks - only count trackable statuses (not_started, in_progress, done)
+              const trackableTasks = (project.project_tasks || []).filter(t =>
+                t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done'
+              )
+              const tasksTotal = trackableTasks.length
+              const tasksDone = trackableTasks.filter(t => t.status === 'done').length
+
+              // Combined totals
+              const totalCount = feedbackTotal + tasksTotal
+              const doneCount = feedbackDone + tasksDone
               const donePercent = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0
 
               return (
@@ -214,7 +290,7 @@ export default function Dashboard() {
                   key={project.id}
                   to={`/project/${project.id}`}
                   className={`grid grid-cols-12 items-center gap-4 px-6 py-5 hover:bg-primary/10 transition-colors ${
-                    index !== projects.length - 1 ? 'border-b border-border-light dark:border-border-dark' : ''
+                    index !== displayedProjects.length - 1 ? 'border-b border-border-light dark:border-border-dark' : ''
                   } ${index % 2 === 1 ? 'bg-slate-50 dark:bg-white/5' : ''}`}
                 >
                   {/* Project Icon & Name - 4 cols */}
@@ -236,7 +312,14 @@ export default function Dashboard() {
                       {project.name[0]?.toUpperCase()}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-white truncate">{project.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-900 dark:text-white truncate">{project.name}</p>
+                        {project.archived && (
+                          <span className="shrink-0 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
+                            Archived
+                          </span>
+                        )}
+                      </div>
                       <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
                         {project.domain || 'No domain'}
                       </p>
@@ -244,7 +327,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Dev Assignee - 2 cols */}
-                  <div className="col-span-2 flex items-center justify-center gap-2">
+                  <div className="col-span-2 flex items-center gap-2">
                     {devAssignee ? (
                       <>
                         {devAssignee.avatar_url ? (
@@ -267,7 +350,7 @@ export default function Dashboard() {
                   </div>
 
                   {/* Content Assignee - 2 cols */}
-                  <div className="col-span-2 flex items-center justify-center gap-2">
+                  <div className="col-span-2 flex items-center gap-2">
                     {contentAssignee ? (
                       <>
                         {contentAssignee.avatar_url ? (
@@ -310,7 +393,7 @@ export default function Dashboard() {
                       <p className="text-sm font-medium text-gray-700 dark:text-gray-300">
                         {formatRelativeTime(mostRecent)}
                       </p>
-                      <p className="text-xs text-gray-400">last submission</p>
+                      <p className="text-xs text-gray-400">last activity</p>
                     </div>
                     <svg className="w-5 h-5 text-gray-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 5l7 7-7 7" />
@@ -323,6 +406,8 @@ export default function Dashboard() {
           </div>
         )}
       </div>
+        )
+      })()}
 
       {/* Create Modal */}
       {showCreateModal && (

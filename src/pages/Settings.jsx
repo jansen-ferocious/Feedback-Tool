@@ -20,7 +20,7 @@ export default function Settings() {
     const { data } = await supabase
       .from('team_members')
       .select('*')
-      .eq('email', user.email)
+      .ilike('email', user.email)
       .single()
 
     if (data) {
