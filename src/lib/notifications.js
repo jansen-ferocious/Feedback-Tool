@@ -1,7 +1,9 @@
 import { supabase } from './supabase'
 
 /**
- * Creates an in-app notification and triggers an email to the recipient.
+ * Creates an in-app notification. Email delivery is handled separately by the
+ * `send-notification-digest` edge function, which runs on a 30-minute pg_cron
+ * schedule and batches all unsent notifications per recipient into one email.
  *
  * @param {Object} notification - notification row to insert
  * @param {string} notification.user_id - team_members.id of the recipient
@@ -24,12 +26,6 @@ export async function createNotification(notification) {
     console.error('Failed to create notification:', error)
     return { data: null, error }
   }
-
-  // Fire-and-forget the email. We don't block the UI if the email fails —
-  // the in-app notification still exists.
-  supabase.functions
-    .invoke('send-notification-email', { body: { notification_id: data.id } })
-    .catch((err) => console.error('Failed to send notification email:', err))
 
   return { data, error: null }
 }
