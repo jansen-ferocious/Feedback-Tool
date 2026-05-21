@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../lib/supabase'
+import { createNotification } from '../lib/notifications'
 import { useAuth } from '../App'
 
 const STATUS_OPTIONS = [
@@ -375,7 +376,7 @@ export default function ProjectTasks({ project, teamMembers, onStatsChange, init
       const commentPreview = text ? (text.length > 50 ? text.slice(0, 50) + '...' : text) : 'Added an image'
 
       for (const userId of notifyUserIds) {
-        await supabase.from('notifications').insert({
+        await createNotification({
           user_id: userId,
           type: 'comment',
           title: `${currentMember.name} commented on a task`,

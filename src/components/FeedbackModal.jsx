@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../lib/supabase'
+import { createNotification } from '../lib/notifications'
 import { useAuth } from '../App'
 
 const STATUS_OPTIONS = [
@@ -192,7 +193,7 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
       // Create notifications
       const commentPreview = commentContent.length > 50 ? commentContent.substring(0, 50) + '...' : commentContent
       for (const userId of notifyUserIds) {
-        await supabase.from('notifications').insert({
+        await createNotification({
           user_id: userId,
           type: 'comment',
           title: `${currentMember.name} commented`,
@@ -229,7 +230,7 @@ export default function FeedbackModal({ feedback, teamMembers, onClose, onUpdate
         ? feedback.comment.substring(0, 50) + '...'
         : feedback.comment || 'No comment'
 
-      await supabase.from('notifications').insert({
+      await createNotification({
         user_id: newAssignee,
         type: 'assignment',
         title: 'New feedback assigned to you',
