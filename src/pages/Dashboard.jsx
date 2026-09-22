@@ -269,16 +269,16 @@ export default function Dashboard() {
               const { devAssignee, contentAssignee, devOpenCount, contentOpenCount } = getAssigneeStats(project)
               const mostRecent = getMostRecentActivity(project)
 
-              // Feedback counts
+              // Feedback counts — 'ignored' (Not Implemented) counts as complete
               const feedbackTotal = project.feedback?.length || 0
-              const feedbackDone = project.feedback?.filter(f => f.status === 'done').length || 0
+              const feedbackDone = project.feedback?.filter(f => f.status === 'done' || f.status === 'ignored').length || 0
 
-              // Client requested tasks - only count trackable statuses (not_started, in_progress, done)
+              // Client requested tasks - trackable statuses (not_started, in_progress, done, ignored)
               const trackableTasks = (project.project_tasks || []).filter(t =>
-                t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done'
+                t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done' || t.status === 'ignored'
               )
               const tasksTotal = trackableTasks.length
-              const tasksDone = trackableTasks.filter(t => t.status === 'done').length
+              const tasksDone = trackableTasks.filter(t => t.status === 'done' || t.status === 'ignored').length
 
               // Combined totals
               const totalCount = feedbackTotal + tasksTotal

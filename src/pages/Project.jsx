@@ -40,13 +40,13 @@ export default function Project() {
       .eq('project_id', projectId)
 
     if (data) {
-      // Only count trackable statuses (not_started, in_progress, done)
+      // Trackable statuses (not_started, in_progress, done, ignored). 'ignored' = Not Implemented, counts as complete.
       const trackable = data.filter(t =>
-        t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done'
+        t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done' || t.status === 'ignored'
       )
       setTaskStats({
         total: trackable.length,
-        completed: trackable.filter(t => t.status === 'done').length,
+        completed: trackable.filter(t => t.status === 'done' || t.status === 'ignored').length,
         tasks: trackable // Include all tasks for per-member calculation
       })
     }
@@ -159,7 +159,7 @@ export default function Project() {
             const combinedMemberStats = feedbackStats.memberStats.map(member => {
               const memberTasks = (taskStats.tasks || []).filter(t => t.assigned_to === member.id)
               const taskTotal = memberTasks.length
-              const taskCompleted = memberTasks.filter(t => t.status === 'done').length
+              const taskCompleted = memberTasks.filter(t => t.status === 'done' || t.status === 'ignored').length
 
               const totalCombined = member.total + taskTotal
               const completedCombined = member.completed + taskCompleted
@@ -180,7 +180,7 @@ export default function Project() {
               .map(member => {
                 const memberTasks = (taskStats.tasks || []).filter(t => t.assigned_to === member.id)
                 const taskTotal = memberTasks.length
-                const taskCompleted = memberTasks.filter(t => t.status === 'done').length
+                const taskCompleted = memberTasks.filter(t => t.status === 'done' || t.status === 'ignored').length
                 const percent = taskTotal > 0 ? Math.round((taskCompleted / taskTotal) * 100) : 0
 
                 return {

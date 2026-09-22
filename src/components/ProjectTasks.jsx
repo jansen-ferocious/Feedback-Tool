@@ -454,19 +454,19 @@ export default function ProjectTasks({ project, teamMembers, onStatsChange, init
 
   const groupedTasks = STATUS_OPTIONS.reduce((acc, s) => { acc[s.value] = filteredTasks.filter(t => t.status === s.value); return acc }, {})
 
-  // Only count not_started and in_progress tasks for completion stats
-  const trackableTasks = tasks.filter(t => t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done')
-  const completedCount = trackableTasks.filter(t => t.status === 'done').length
+  // Trackable statuses (not_started, in_progress, done, ignored). 'ignored' = Not Implemented, counts as complete.
+  const trackableTasks = tasks.filter(t => t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done' || t.status === 'ignored')
+  const completedCount = trackableTasks.filter(t => t.status === 'done' || t.status === 'ignored').length
   const totalCount = trackableTasks.length
   const completionPercent = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
 
   // Notify parent of stats changes (include tasks array for per-member calculations)
   useEffect(() => {
     if (onStatsChange) {
-      const trackable = tasks.filter(t => t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done')
+      const trackable = tasks.filter(t => t.status === 'not_started' || t.status === 'in_progress' || t.status === 'done' || t.status === 'ignored')
       onStatsChange({
         total: trackable.length,
-        completed: trackable.filter(t => t.status === 'done').length,
+        completed: trackable.filter(t => t.status === 'done' || t.status === 'ignored').length,
         tasks: trackable
       })
     }
