@@ -46,6 +46,30 @@ export default function Dashboard() {
     setLoading(false)
   }
 
+  // Toggle the feedback widget active/inactive from the table view
+  async function toggleWidget(e, project) {
+    e.preventDefault()
+    e.stopPropagation()
+
+    // Treat null/undefined as active (default true), matching ProjectSettings + widget
+    const newValue = !(project.widget_active !== false)
+
+    // Optimistic update
+    setProjects(prev => prev.map(p => p.id === project.id ? { ...p, widget_active: newValue } : p))
+
+    const { error } = await supabase
+      .from('projects')
+      .update({ widget_active: newValue })
+      .eq('id', project.id)
+
+    if (error) {
+      console.error('Error toggling widget:', error)
+      // Revert on failure
+      setProjects(prev => prev.map(p => p.id === project.id ? { ...p, widget_active: !newValue } : p))
+      alert('Failed to update widget status')
+    }
+  }
+
   // Helper to get team member by id
   function getMember(id) {
     return teamMembers.find(m => m.id === id)
@@ -257,10 +281,11 @@ export default function Dashboard() {
           <div>
             {/* Header Row */}
             <div className="grid grid-cols-12 items-center gap-4 px-6 py-3 border-b border-border-light dark:border-border-dark text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
-              <div className="col-span-4">Project</div>
+              <div className="col-span-3">Project</div>
               <div className="col-span-2">Dev</div>
               <div className="col-span-2">Content</div>
               <div className="col-span-2">Total Progress</div>
+              <div className="col-span-1 text-center">Widget</div>
               <div className="col-span-2 text-right pr-8">Latest Activity</div>
             </div>
             {/* Project Rows */}
@@ -293,8 +318,8 @@ export default function Dashboard() {
                     index !== displayedProjects.length - 1 ? 'border-b border-border-light dark:border-border-dark' : ''
                   } ${index % 2 === 1 ? 'bg-slate-50 dark:bg-white/5' : ''}`}
                 >
-                  {/* Project Icon & Name - 4 cols */}
-                  <div className="col-span-4 flex items-center gap-4">
+                  {/* Project Icon & Name - 3 cols */}
+                  <div className="col-span-3 flex items-center gap-4">
                     {(project.icon_url || project.domain) ? (
                       <img
                         src={project.icon_url || `https://www.google.com/s2/favicons?domain=${project.domain}&sz=64`}
@@ -385,6 +410,25 @@ export default function Dashboard() {
                       />
                     </div>
                     <p className="text-xs text-gray-400 text-center mt-1">{donePercent}% complete</p>
+                  </div>
+
+                  {/* Widget Toggle - 1 col */}
+                  <div className="col-span-1 flex justify-center">
+                    <button
+                      type="button"
+                      onClick={(e) => toggleWidget(e, project)}
+                      title={project.widget_active !== false ? 'Widget active — click to disable' : 'Widget inactive — click to enable'}
+                      className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${
+                        project.widget_active !== false ? '' : 'bg-gray-300 dark:bg-gray-600'
+                      }`}
+                      style={project.widget_active !== false ? { backgroundColor: '#9865e3' } : {}}
+                    >
+                      <span
+                        className={`pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${
+                          project.widget_active !== false ? 'translate-x-5' : 'translate-x-0'
+                        }`}
+                      />
+                    </button>
                   </div>
 
                   {/* Most Recent - 2 cols */}

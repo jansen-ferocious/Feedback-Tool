@@ -31,7 +31,8 @@ export default function ProjectSettings({ project, onUpdate }) {
   }
 
   const devMembers = members.filter(m => m.team === 'Dev')
-  const contentMembers = members.filter(m => m.team === 'Content')
+  // SEO team can also be assigned as the content person
+  const contentMembers = members.filter(m => m.team === 'Content' || m.team === 'SEO')
 
   async function handleSaveAssignees() {
     setSavingAssignees(true)
@@ -456,7 +457,7 @@ export default function ProjectSettings({ project, onUpdate }) {
               {contentMembers.length === 0 ? (
                 <div className="p-4 rounded-xl bg-white/50 dark:bg-gray-800/50 text-center">
                   <p className="text-sm text-gray-400 dark:text-gray-500">
-                    No Content team members yet
+                    No Content or SEO team members yet
                   </p>
                 </div>
               ) : (
@@ -495,6 +496,11 @@ export default function ProjectSettings({ project, onUpdate }) {
                           </div>
                         )}
                         <span className="text-sm font-medium text-gray-900 dark:text-white">{member.name?.split(' ')[0]}</span>
+                        {member.team === 'SEO' && (
+                          <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-400">
+                            SEO
+                          </span>
+                        )}
                       </label>
                     )
                   })}
