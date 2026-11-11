@@ -26,12 +26,60 @@ export default function Project() {
   const [feedbackStats, setFeedbackStats] = useState({ filtered: 0, total: 0, completed: 0, completionPercent: 0, memberStats: [] })
   const [taskStats, setTaskStats] = useState({ total: 0, completed: 0, tasks: [] })
   const [currentUserMemberId, setCurrentUserMemberId] = useState(null)
+  const [exportModal, setExportModal] = useState({ open: false, text: '', count: 0, loading: false, copied: false })
 
   useEffect(() => {
     fetchProject()
     fetchTeamMembers()
     fetchTaskStats()
   }, [projectId])
+
+  // Export all not-started feedback as plain text to paste into Claude
+  async function handleExportToClaude() {
+    setExportModal({ open: true, text: '', count: 0, loading: true, copied: false })
+
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('comment, page_url, browser, os, viewport_width, viewport_height, element_selector, element_html, created_at')
+      .eq('project_id', projectId)
+      .eq('status', 'not_started')
+      .order('created_at', { ascending: true })
+
+    if (error) {
+      console.error('Error exporting feedback:', error)
+      setExportModal({ open: true, text: 'Failed to load feedback for export.', count: 0, loading: false, copied: false })
+      return
+    }
+
+    const items = data || []
+    const header = `Feedback export — ${project.name}${project.domain ? ` (${project.domain})` : ''}\n${items.length} not-started feedback item${items.length !== 1 ? 's' : ''}`
+
+    const body = items.map((f, i) => {
+      const device = [
+        [f.browser, f.os].filter(Boolean).join(' on '),
+        (f.viewport_width && f.viewport_height) ? `${f.viewport_width}×${f.viewport_height}` : null,
+      ].filter(Boolean).join(' · ') || '—'
+      const element = f.element_selector || f.element_html || '—'
+      return `${i + 1}. ${f.comment || '(no comment)'}\n   Page: ${f.page_url || '—'}\n   Device: ${device}\n   Element: ${element}`
+    }).join('\n\n')
+
+    const text = items.length
+      ? `${header}\n\n${body}`
+      : `${header}\n\nNo not-started feedback items to export.`
+
+    setExportModal({ open: true, text, count: items.length, loading: false, copied: false })
+  }
+
+  async function copyExport() {
+    try {
+      await navigator.clipboard.writeText(exportModal.text)
+      setExportModal(prev => ({ ...prev, copied: true }))
+      setTimeout(() => setExportModal(prev => ({ ...prev, copied: false })), 2000)
+    } catch (e) {
+      console.error('Copy failed:', e)
+      alert('Copy failed — select the text and copy manually.')
+    }
+  }
 
   async function fetchTaskStats() {
     const { data } = await supabase
@@ -302,6 +350,21 @@ export default function Project() {
         {/* Sort & Filter - only on feedback tab, right aligned */}
         {activeTab === 'feedback' && (
           <div className="flex items-center gap-4 ml-auto">
+            {/* Export to Claude */}
+            <button
+              onClick={handleExportToClaude}
+              title="Export not-started feedback as text to paste into Claude"
+              className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-white dark:bg-slate-800 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors"
+            >
+              <svg className="w-4 h-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.8} d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09z" />
+              </svg>
+              Export to Claude
+            </button>
+
+            {/* Divider */}
+            <div className="h-6 w-px bg-slate-200 dark:bg-slate-600 hidden sm:block" />
+
             {/* Item count */}
             <div className="flex items-center gap-1.5 text-sm text-gray-400">
               <span className="font-medium text-gray-600 dark:text-gray-300">{feedbackStats.filtered}</span>
@@ -401,6 +464,61 @@ export default function Project() {
         />
       )}
       {activeTab === 'settings' && <ProjectSettings project={project} onUpdate={fetchProject} />}
+
+      {/* Export to Claude Modal */}
+      {exportModal.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
+          <div className="card w-full max-w-2xl p-6 flex flex-col max-h-[85vh]">
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Export to Claude</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400">
+                  {exportModal.loading
+                    ? 'Loading…'
+                    : `${exportModal.count} not-started item${exportModal.count !== 1 ? 's' : ''} — copy and paste into Claude`}
+                </p>
+              </div>
+              <button
+                onClick={() => setExportModal(prev => ({ ...prev, open: false }))}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {exportModal.loading ? (
+              <div className="flex items-center justify-center py-16">
+                <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            ) : (
+              <textarea
+                readOnly
+                value={exportModal.text}
+                onFocus={(e) => e.target.select()}
+                className="input flex-1 min-h-[300px] font-mono text-xs leading-relaxed resize-none"
+              />
+            )}
+
+            <div className="flex gap-3 pt-4">
+              <button
+                onClick={() => setExportModal(prev => ({ ...prev, open: false }))}
+                className="btn-ghost flex-1"
+              >
+                Close
+              </button>
+              <button
+                onClick={copyExport}
+                disabled={exportModal.loading || exportModal.count === 0}
+                className="btn-primary flex-1 disabled:opacity-50"
+              >
+                {exportModal.copied ? 'Copied!' : 'Copy to clipboard'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
